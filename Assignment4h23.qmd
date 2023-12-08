@@ -1,0 +1,57 @@
+---
+title: "Assignment4h23"
+format: html
+editor: visual
+language: nb.yaml
+---
+
+```{r}
+#| label: setup
+#| output: false
+#| message: false
+#| echo: false
+library(tidyverse)
+library(readxl)
+library(restatapi)
+library(DescTools)
+library(ggrepel)
+library(flextable)
+library(modelr)
+library(plm)
+library(broom)
+library(sandwich)
+```
+
+```{r}
+# xml skal ha mer detaljert info
+# toc_xml <- get_eurostat_toc()
+# tekstversjonen har trolig nok info for vårt formål
+toc_txt <- get_eurostat_toc(mode = "txt")
+```
+
+```{r}
+gdp_tabs <- toc_txt |>
+   # Regex AND external to regex
+      filter(
+        str_detect(
+string = title,
+# For å matche både små og store bokstaver pattern = '[Gg][Dd][Pp]'
+# AND vha. &
+) &
+        str_detect(
+          string = title,
+          # For å matche både små og store bokstaver og
+          # space eller ikke før 3
+          pattern = '[Nn][Uu][Tt][Ss]\\s*3'
+          )
+) |>
+     select(title, code)
+```
+
+```{r}
+gdp_tabs |>
+     select(title, code) |>
+     flextable()  |>
+     width(1, width = 3.5) |>
+     width(2, width = 1.5)
+```
