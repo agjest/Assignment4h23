@@ -35,7 +35,8 @@ gdp_tabs <- toc_txt |>
       filter(
         str_detect(
 string = title,
-# For å matche både små og store bokstaver pattern = '[Gg][Dd][Pp]'
+# For å matche både små og store bokstaver 
+pattern = '[Gg][Dd][Pp]'
 # AND vha. &
 ) &
         str_detect(
@@ -54,4 +55,38 @@ gdp_tabs |>
      flextable()  |>
      width(1, width = 3.5) |>
      width(2, width = 1.5)
+```
+
+```{r}
+# description nama_10r_3gdp
+   dsd_gdp <- get_eurostat_dsd("nama_10r_3gdp")
+  dsd_gdp |>
+  head(n = 15) |>
+  flextable()  |>
+  width(1, width = 1) |>
+  width(2, width = 1) |>
+  width(3, width = 3.5)
+```
+
+```{r}
+# Gross domestic product (GDP) at current market prices by NUTS 3 regions
+  # id: nama_10r_3gdp
+  nama_10r_3gdp <- get_eurostat_data(
+    id = "nama_10r_3gdp",
+    filters = list(
+      geo = c("AT", "DE", "DK", "FR", "EL", "ES",
+              "IT", "NL", "BE", "IE", "PL", "PT", "NO", "SE", "FI", "CH"),
+      nuts_level = "3",
+      unit = "MIO_PPS_EU27_2020"
+    ),
+    exact_match = FALSE,
+    date_filter = 2000:2020,
+    stringsAsFactors = FALSE
+    ) |>
+    mutate(
+      gdp = 1000000 * values
+    ) |>
+    select(-c(unit, values)) |>
+    # Vil bare ha NUTS 3 nivå (5 karakterer). Vil aggregere selv til NUTS2, NUTS1 og NUTSc
+     filter(str_length(geo) == 5)
 ```
