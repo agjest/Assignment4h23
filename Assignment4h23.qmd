@@ -802,13 +802,24 @@ t.test(NUTS2_diff$mod_coeff$diff_gdp_per_capita, y = NULL,
        conf.level = 0.95)
 ```
 
-Ettersom p-verdien (0,004755) er mindre enn det vanlige signifikansnivået på 0.05, har vi tilstrekkelig bevis til å avvise nullhypotesen om at gjennomsnittet av **`diff_gdp_per_capita`** er lik null.
-Derfor kan vi konkludere med at endringene i **`gdp_per_capita`** er signifikant større enn null.
+Ettersom p-verdien (0,004755) er mindre enn det vanlige signifikansnivået på 0.05, har vi tilstrekkelig bevis til å avvise nullhypotesen om at gjennomsnittet av diff_gdp_per_capita er lik null.
+Derfor kan vi konkludere med at endringene i gdp_per_capita er signifikant større enn null.
 
 ## Oppgave 44
 
 ```{r}
-p_mod <- plm(diff_gini_nuts2 ~ diff_gdp_per_capita, data = NUTS2_diff$mod_coeff, index = c("NUTS2", "year"), model = "pooling")
+# Lager et nytt datasett som inneholder de nødvendige variablene vi trenger.
+new_dataset <- eu_data_nested %>%
+  unnest(NUTS2_data) %>%
+  mutate(
+    diff_gdp_per_capita = c(NA, diff(gdp_per_capita)),
+    diff_gini_nuts2 = c(NA, diff(gini_nuts2))
+  ) %>%
+  select(country_name, country, NUTS2, year, diff_gdp_per_capita, diff_gini_nuts2) %>%
+  filter(!is.na(diff_gdp_per_capita))  # Fjern rader med NA-verdier
+
+# Panel
+p_mod <- plm(diff_gini_nuts2 ~ diff_gdp_per_capita, data = new_dataset, index = c("NUTS2", "year"), model = "pooling")
 ```
 
 ## Oppgave 45
@@ -817,10 +828,22 @@ p_mod <- plm(diff_gini_nuts2 ~ diff_gdp_per_capita, data = NUTS2_diff$mod_coeff,
 summary(p_mod)
 ```
 
-Tolkning ...
+Panelet over viser sammenhengen mellom endringer i BNP per innbygger (**`diff_gdp_per_capita`**) og endringer i Gini-koeffisienten på NUTS2-nivå (**`diff_gini_nuts2`**).
+Resultatene indikerer at økonomisk vekst, representert ved **`diff_gdp_per_capita`**, har en signifikant positiv sammenheng med endringer i Gini-koeffisienten.
+Koeffisienten for **`diff_gdp_per_capita`** er tilnærmet lik null ( 3.1165e-06), og p-verdien er svært lav, noe som tyder på at økt økonomisk aktivitet er assosiert med økninger i inntektsulikheter på NUTS2-nivå.
+Modellen forklarer 14.17% av variansen i Gini-koeffisienten.
 
 ## Oppgave 46
 
 ```{r}
 summary(p_mod, vcov = function(x) vcovHC(x, method = "white2"))
 ```
+
+I den alternative måten å generere summary() for p_mod blir det brukt heteroskedastisitetskonsistent (HC) standardfeil beregnet ved White's metode (method = "white2").
+Dette gjøres ved å inkludere vcovHC(x, method = "white2") som et argument i summary()-funksjonen.
+White's HC-estimator justerer for mulig heteroskedastisitet i feilleddene og gir mer robuste standardfeil, spesielt i tilfeller der det er mistanke om at feilleddene ikke har konstant varians.
+
+Sammenlignet med den ordinære summary () gir den alternative metoden litt forskjellige standardfeil og justerte p-verdier.
+Dette skyldes bruken av robuste standardfeil i den alternative tilnærmingen.
+Koeffisienten for diff_gdp_per_capita forblir signifikant, og hovedfunnene i analysen er i stor grad ganske lik.
+Den robuste tilnærmingen gir mer pålitelige standardfeil når det er bekymringer for heteroskedastisitet.
