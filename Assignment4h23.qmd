@@ -228,6 +228,11 @@ full_pop_nuts3 |>
      arrange(time, geo)
 ```
 
+```{r}
+full_pop_nuts3 <- full_pop_nuts3 %>%
+  filter(!str_detect(str_sub(geo, start = 3, end = 5), "ZZZ$"))
+```
+
 ## Oppgave 10
 
 ```{r}
@@ -253,6 +258,11 @@ full_pop_nuts3 <- full_pop_nuts3 %>%
 
 ```{r}
 eu_data <- left_join(nama_10r_3gdp, full_pop_nuts3, by = c("geo", "time"))
+```
+
+```{r}
+eu_data <- eu_data %>%
+  filter(!str_detect(str_sub(geo, start = 3, end = 5), "ZZZ$"))
 ```
 
 ```{r}
@@ -461,34 +471,356 @@ gini_NUTSc_nest <- gini_NUTSc %>%
 ## Oppgave 22
 
 ```{r}
-# Neste dataene på NUTS3-nivå
-eu_data_nestet <- eu_data %>%
-  group_by(NUTS3, country_name, country, year) %>%
-  nest(.key = "NUTS3_data") %>%
+# Anta at eu_data er ditt opprinnelige datasett
+
+# Grupper etter land og neste dataene på NUTS3-nivå
+eu_data_nested <- eu_data %>%
+  group_by(country_name, country) %>%
+  nest() %>%
+  rename(NUTS3_data = data) %>%
   ungroup()
 
-# Left join med gini-data på NUTS2-nivå
-eu_data_nestet <- left_join(eu_data_nestet, gini_NUTS2_nest, by = c("country_name", "country"))
+# Sørg for at de andre gini-datasettene har én rad per land
+# Du må kanskje utføre en aggregering her hvis det er nødvendig
+gini_NUTS2_nest_unique <- gini_NUTS2_nest %>% distinct(country_name, country, .keep_all = TRUE)
+gini_NUTS1_nest_unique <- gini_NUTS1_nest %>% distinct(country_name, country, .keep_all = TRUE)
+gini_NUTSc_nest_unique <- gini_NUTSc_nest %>% distinct(country_name, country, .keep_all = TRUE)
 
-# Left join med gini-data på NUTS1-nivå
-eu_data_nestet <- left_join(eu_data_nestet, gini_NUTS1_nest, by = c("country_name", "country"))
+# Left join med de unike gini-datasettene
+eu_data_nested <- eu_data_nested %>%
+  left_join(gini_NUTS2_nest_unique, by = c("country_name", "country")) %>%
+  left_join(gini_NUTS1_nest_unique, by = c("country_name", "country")) %>%
+  left_join(gini_NUTSc_nest_unique, by = c("country_name", "country"))
 
-# Left join med gini-data på NUTSc-nivå
-eu_data_nestet <- left_join(eu_data_nestet, gini_NUTSc_nest, by = c("country_name", "country"))
+# Fjerner gruppestrukturen og eventuelle duplikater
+eu_data_nested <- eu_data_nested %>%
+  ungroup() %>%
+  distinct(country_name, country, .keep_all = TRUE)
 
-# Fjerner gruppestrukturen
-eu_data_nestet <- eu_data_nestet %>% ungroup()
-```
-
-```{r}
-# don't run if you don't mean it.
-rm(list = setdiff(ls(), c("eu_data", "eu_data_nested")))
+# Sjekk strukturen til den endelige dataframen
+print(eu_data_nested)
 ```
 
 ## Oppgave 23
 
+```{r}
+# Konverter year til numerisk format
+gini_NUTSc$year <- as.numeric(gini_NUTSc$year)
+
+# Plotting med femårsintervaller på x-aksen
+ggplot(gini_NUTSc, aes(x = year, y = gini_nutsc, group = country_name, color = country_name)) +
+  geom_line() +
+  labs(title = "Utvikling i Gini-koeffisient på nasjonsnivå",
+       x = "År",
+       y = "Gini-koeffisient") +
+  scale_x_continuous(breaks = seq(min(gini_NUTSc$year), max(gini_NUTSc$year), by = 5))
+```
+
+```{r}
+eu_data_nested |> 
+  unnest(NUTSc_data) |> 
+  filter(year == 2020) |> 
+  select(country_name, gini_nutsc) |> 
+  arrange(desc(gini_nutsc)) |> 
+  flextable() |> 
+  width(1, width = 1.5) |> 
+  width(2, width = 1.5)
+```
+
 ## Oppgave 24
+
+```{r}
+eu_data_nested %>%
+  unnest(NUTS2_data) %>%
+  filter(country == "IE") %>%
+  filter(year == 2000:2020) %>%
+  select(year, NUTS2, gdp_per_capita, gini_nuts2) %>%
+  arrange(desc(gini_nuts2)) %>%
+  flextable() %>%
+  width(1, width = 1.5) %>%
+  width(2, width = 1.5)
+```
 
 ## Oppgave 25
 
+```{r}
+eu_data_nested %>%
+  unnest(NUTS2_data) %>%
+  filter(country == "ES") %>%
+  filter(year == 2000:2020) %>%
+  select(year, NUTS2, gdp_per_capita, gini_nuts2) %>%
+  arrange(desc(gini_nuts2)) %>%
+  flextable() %>%
+  width(1, width = 1.5) %>%
+  width(2, width = 1.5)
+```
+
+```{r}
+eu_data_nested %>%
+  unnest(NUTS2_data) %>%
+  filter(country == "ES") %>%
+  ggplot(aes(x = year, y = gini_nuts2, group = NUTS2, color = NUTS2)) +
+  geom_line() +
+  labs(title = "Utvikling i Gini-koeffisientene for NUTS2-regionene i Spania",
+       x = "År",
+       y = "Gini-koeffisient")
+```
+
 ## Oppgave 26
+
+```{r}
+eu_data_nested %>%
+  unnest(NUTS1_data) %>%
+  filter(country == "ES") %>%
+  ggplot(aes(x = year, y = gini_nuts1, group = NUTS1, color = NUTS1)) +
+  geom_line() +
+  labs(title = "Utvikling i Gini-koeffisientene for NUTS2-regionene i Spania",
+       x = "År",
+       y = "Gini-koeffisient")
+```
+
+## Oppgave 27
+
+Basert på figurene over som viser Gini-koeffisientene for de spanske NUTS2-regionene, observerer vi betydelige variasjoner i inntektsulikheten mellom regionene og over tid.
+Dette indikerer at fordelingen av økonomisk aktivitet og inntekt i Spania har endret seg gjennom årene.
+Noen regioner fremviser en trend mot økende ulikhet, mens andre har mer stabile eller avtagende nivåer av ulikhet.
+ES7 Canarias utmerker seg med en sterk nedgang.
+De varierende Gini-koeffisientene reflekterer regionsspesifikke økonomiske forhold og er en indikator på at økonomisk vekst og velstand ikke er jevnt fordelt over landet.
+
+## Oppgave 28
+
+```{r}
+# Filtrer på Spania (ES) og NUTS2-nivå
+eu_data_spain_nuts2 <- eu_data_nested %>%
+  unnest(NUTS2_data) %>%
+  filter(country == "ES")
+
+# Plotting av gdp_per_capita for de ulike NUTS2-regionene i Spania
+ggplot(eu_data_spain_nuts2, aes(x = year, y = gdp_per_capita, group = NUTS2, color = NUTS2)) +
+  geom_line() +
+  labs(title = "Utvikling i GDP per Capita på NUTS2-nivå i Spania",
+       x = "År",
+       y = "GDP per Capita")
+```
+
+## Oppgave 29
+
+```{r}
+# Filtrer på Tyskland (DE) og NUTS2-nivå
+eu_data_Germany_nuts2 <- eu_data_nested %>%
+  unnest(NUTS2_data) %>%
+  filter(country == "DE")
+
+# Plotting av gdp_per_capita for de ulike NUTS2-regionene i Tyskland
+ggplot(eu_data_Germany_nuts2, aes(x = year, y = gini_nuts2, group = NUTS2, color = NUTS2)) +
+  geom_line() +
+  labs(title = "Utvikling i gini_nuts2 i Tyskland",
+       x = "År",
+       y = "gini_nuts2")
+```
+
+## Oppgave 30
+
+```{r}
+# Filtrer på Tyskland (DE) og NUTS1-nivå
+eu_data_Germany_nuts1 <- eu_data_nested %>%
+  unnest(NUTS1_data) %>%
+  filter(country == "DE")
+
+# Plotting av gdp_per_capita for de ulike NUTS2-regionene i Tyskland
+ggplot(eu_data_Germany_nuts1, aes(x = year, y = gini_nuts1, group = NUTS1, color = NUTS1)) +
+  geom_line() +
+  labs(title = "Utvikling i gini_nuts1 i Tyskland",
+       x = "År",
+       y = "gini_nuts1")
+```
+
+Det er nesten samme tilfelle når vi ser på de større regioner (NUTS1) i Tyskland, men vi ser at spredningen ikke er like stor.
+
+## Oppgave 31
+
+```{r}
+# Filtrer på Frankrike (FR) og NUTS2-nivå
+eu_data_Frankrike_nuts2 <- eu_data_nested %>%
+  unnest(NUTS2_data) %>%
+  filter(country == "FR")
+
+# Plotting av gdp_per_capita for de ulike NUTS2-regionene i Frankrike
+ggplot(eu_data_Frankrike_nuts2, aes(x = year, y = gini_nuts2, group = NUTS2, color = NUTS2)) +
+  geom_line() +
+  labs(title = "Utvikling i gini_nuts2 i Frankrike",
+       x = "År",
+       y = "gini_nuts2")
+```
+
+```{r}
+eu_data_nested |>
+     unnest(NUTS2_data) |>
+     filter(country_name == "Frankrike") |>
+     filter(year == 2020) |>
+     select(NUTS2, gini_nuts2) |>
+     arrange(desc(gini_nuts2)) |>
+     flextable()  |>
+     width(1, width = 1.5) |>
+     width(2, width = 1.5)
+
+```
+
+## Oppgave 32
+
+```{r}
+# Filtrer på Frankrike (FR) og NUTS2-nivå
+eu_data_Frankrike_nuts1 <- eu_data_nested %>%
+  unnest(NUTS1_data) %>%
+  filter(country == "FR")
+
+# Plotting av gininuts1 for de ulike NUTS1-regionene i Frankrike
+ggplot(eu_data_Frankrike_nuts1, aes(x = year, y = gini_nuts1, group = NUTS1, color = NUTS1)) +
+  geom_line() +
+  labs(title = "Utvikling i gini_nuts2 i Frankrike",
+       x = "År",
+       y = "gini_nuts1")
+```
+
+## Oppgave 33
+
+Regionen FR1 er Ile-de-France og inkluderer Paris, og er mye høyere pga.
+det er mye økonomisk aktivitet i denne regionen.
+
+## Oppgave 34
+
+```{r}
+eu_data_nested |> 
+  filter(country == "FR") |> 
+  unnest(NUTS3_data) |> 
+  filter(NUTS1 == "FR1") |> 
+  ggplot(
+    aes(
+      x = year,
+      y = gdp_per_capita,
+      group = NUTS3,
+      color = NUTS3,
+    )
+  ) +
+  geom_line()
+```
+
+## Oppgave 35
+
+Regionen FR1 er Ile-de-France og inkluderer Paris, og er mye høyere pga.
+det er mye økonomisk aktivitet i denne regionen.
+
+## Oppgave 36
+
+```{r}
+NUTS2_diff <- eu_data_nested |> 
+  unnest(NUTS2_data) |> 
+  mutate(
+    # Når vi tar diff får vi en obs. mindre. Legger derfor inn en NA først
+    # i vektoren
+    diff_gdp_per_capita = c(NA, diff(gdp_per_capita)),
+    diff_gini_nuts2 = c(NA, diff(gini_nuts2))
+    ) |> 
+  select(country_name, country, NUTS2, year, diff_gdp_per_capita, diff_gini_nuts2) %>% 
+  # Fjerner obs. der vi har NA
+  filter(complete.cases(.)) |> 
+  group_by(country_name, country, NUTS2) |> 
+  nest(.key = "NUTS2_diff")
+```
+
+## Oppgave 37
+
+```{r}
+NUTS2_diff <- NUTS2_diff %>%
+  mutate(
+    modell = map(NUTS2_diff, ~ lm(diff_gini_nuts2 ~ diff_gdp_per_capita, data = .))
+  )
+
+```
+
+## Oppgave 38
+
+```{r}
+NUTS2_diff <- NUTS2_diff  |> 
+  group_by(country_name, country, NUTS2) |> 
+  mutate(
+    mod_coeff = map_df(
+      .x = modell,
+      .f = coef
+      )
+    )
+```
+
+## Oppgave 39
+
+```{r}
+NUTS2_diff <- NUTS2_diff  |> 
+  group_by(country_name, country, NUTS2) |> 
+  mutate(
+    mod_sum = map_df(
+      .x = modell,
+      .f = glance
+      )
+    )
+```
+
+## Oppgave 40
+
+```{r}
+NUTS2_diff$mod_coeff |> 
+  ggplot() +
+  geom_density(mapping = aes(x = diff_gdp_per_capita), adjust = 0.6) +
+  geom_vline(mapping = aes(xintercept = mean(diff_gdp_per_capita, na.rm = TRUE)), 
+                           colour = "gray60",
+                           linetype = "dashed")
+```
+
+## Oppgave 41
+
+```{r}
+# Antall positive regresjonskoeffisienter
+antall_positive_koef <- sum(NUTS2_diff$modell %>% map_dbl(~ coef(.)["diff_gdp_per_capita"] > 0))
+
+cat("Antall positive regresjonskoeffisienter for diff_gdp_per_capita:", antall_positive_koef, "\n")
+```
+
+## Oppgave 42
+
+```{r}
+# Gjennomsnitt av regresjonskoeffisientene for diff_gdp_per_capita
+gjennomsnitt_koef <- mean(NUTS2_diff$modell %>% map_dbl(~ coef(.)["diff_gdp_per_capita"]))
+
+cat("Gjennomsnitt av regresjonskoeffisientene for diff_gdp_per_capita:", gjennomsnitt_koef, "\n")
+```
+
+## Oppgave 43
+
+```{r}
+t.test(NUTS2_diff$mod_coeff$diff_gdp_per_capita, y = NULL,
+       alternative = c("greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+Ettersom p-verdien (0,004755) er mindre enn det vanlige signifikansnivået på 0.05, har vi tilstrekkelig bevis til å avvise nullhypotesen om at gjennomsnittet av **`diff_gdp_per_capita`** er lik null.
+Derfor kan vi konkludere med at endringene i **`gdp_per_capita`** er signifikant større enn null.
+
+## Oppgave 44
+
+```{r}
+p_mod <- plm(diff_gini_nuts2 ~ diff_gdp_per_capita, data = NUTS2_diff$mod_coeff, index = c("NUTS2", "year"), model = "pooling")
+```
+
+## Oppgave 45
+
+```{r}
+summary(p_mod)
+```
+
+Tolkning ...
+
+## Oppgave 46
+
+```{r}
+summary(p_mod, vcov = function(x) vcovHC(x, method = "white2"))
+```
