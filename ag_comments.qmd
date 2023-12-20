@@ -1,0 +1,21 @@
+---
+title: "ag comments"
+format: 
+  html: default
+  pdf: default
+editor: visual
+---
+
+-   Dokumentet er reproduserbart. Flott!
+-   Oppgave 12 «feil tall». Dere 21062 har fjernet alle ZZZ soner, jeg har bare fjernet ZZZ soner som ikke finnes i nana_10r_3gdp. Gjør at jeg har 21 DKZZZ, 21 ESZZZ, 21 ITZZZ, 21 NLZZZ og 13 NOZZZ soner (totalt 97 soner) som dere har droppet. Det ene valget er like riktig som det andre.
+-   Har lagt inn noen #\| paged.print: false for å få console output
+-   Oppgave 13: Jeg har 110 NA, dere har 13 (forskjell 97 som stemmer). Jeg har maks gdp_per_capita 177583, mens dere har 177427.
+-   oppgave 25 og 26: se triks med year for å få fint formatert horisontal akse
+-   Oppgave 27: Ok drøfting, men Spania har overraskende lav gini. Innebærer relativt jevn fordeling av økonomisk aktivitet mellom NUTS 3 regionene internt i hver NUTS 2 region.
+-   oppgave 31: Helt greit å bruke labs(title = "") til å sette tittel på plotet, men en får mye mer funksjonalitet ved å benytte hash-pipe-ene #\| lable: og #\| fig-cap:"caption tekst"
+-   oppgave 32: Fikset year for horisontal akse. Kan skrives om til en pipe hvis en ønsker.
+-   oppgave 34: fikset year. Også for Frankrike ser en effekten av covid-19 lengst til høyre
+-   oppgave 41 og 42: Elegant bruk av map_dbl() og anonym funksjon. En mer rett frem tradisjonell løsning ville være `table(NUTS2_diff$mod_coeff$diff_gdp_per_capita > 0)`
+-   oppgave 44: Fornuftig med pooling siden vi benytter first-difference data
+-   oppgave 46: Flott diskusjon av heteroskedastisitetskonsistente estimater av SE og bruk av anonym funksjon. Merk at method argumentet er spesielt for plm sin summary kommando. Siden p_mod er et plm objekt er det egentlig summary.plm() funksjonen som blir kalt. "white2" er en av totalt 3 tilgjengelige methods. summary.plm() har også det mer generelle type arumenter som gir adgang til å velge vektingen som blir brukt HC1; HC2 etc. Merk at Stat og R bruker forskjellig standard vekting for robust SE (se help sandwich::vcovHC for detaljer). Se vcovHC.plm for detaljer rundt panel modeller og SE.
+-   Et solid stykke arbeid. Dere begynner vireklig å få taket på R-koding. Godkjent.

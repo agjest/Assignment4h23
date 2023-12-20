@@ -1,8 +1,15 @@
 ---
 title: "Assignment4h23"
-format: html
+format: 
+  html: default
+  pdf:
+    toc: true
 editor: visual
 language: nb.yaml
+execute:
+  echo: true
+  eval: true
+## Ovenfor kan kommenteres ut ved bruk av ##
 ---
 
 ```{r}
@@ -167,7 +174,8 @@ nuts3_missing_in_demo_r_pjanaggr3 <- setdiff(
 )
 
 # Vis resultatet
-print(nuts3_missing_in_demo_r_pjanaggr3)
+# ag_comment: setter width så fåre en finere output
+print(nuts3_missing_in_demo_r_pjanaggr3, width = 78)
 ```
 
 ## Oppgave 5
@@ -180,12 +188,15 @@ nuts3_missing_in_nama_10r_3gdp <- setdiff(
 )
 
 # Vis resultatet
-print(nuts3_missing_in_nama_10r_3gdp)
+# ag_comment: setter width så fåre en finere output
+print(nuts3_missing_in_nama_10r_3gdp, width = 78)
 ```
 
 ## Oppgave 6
 
 ```{r}
+#| paged.print: false
+# hsh pipe over for å få console output
 # Utfører en full_join
 full_pop_nuts3 <- full_join(demo_r_pjanaggr3, nama_10r_3popgdp, by = c("geo", "time"))
 
@@ -203,7 +214,7 @@ nuts3_missing_in_gdp <- setdiff(
 )
 
 # Vis resultatet
-print(nuts3_missing_in_gdp)
+print(nuts3_missing_in_gdp, width = 78)
 ```
 
 ## Oppgave 8
@@ -216,12 +227,13 @@ nuts3_missing_in_full_pop_nuts3 <- setdiff(
 )
 
 # Vis resultatet
-print(nuts3_missing_in_full_pop_nuts3)
+print(nuts3_missing_in_full_pop_nuts3, width = 78)
 ```
 
 ## Oppgave 9
 
 ```{r}
+#| paged.print: false
 full_pop_nuts3 |>
      filter(geo %in% c("NO053", "NO060", "NO061")) |>
      filter(time %in% 2014:2020) |>
@@ -281,6 +293,7 @@ eu_data <- eu_data |>
 ```
 
 ```{r}
+#| paged.print: false
 eu_data |>
     distinct(geo, .keep_all = TRUE) |>
     group_by(country) |>
@@ -384,6 +397,7 @@ gini_NUTS2 |>
 ```
 
 ```{r}
+#| paged.print: false
 gini_NUTS2 |>
     select(-country_name) |>
     filter(gini_nuts2 < 0.001)
@@ -556,9 +570,12 @@ eu_data_nested %>%
 ```
 
 ```{r}
+#| warning: false
 eu_data_nested %>%
   unnest(NUTS2_data) %>%
   filter(country == "ES") %>%
+  # ag_comment: Et lite triks med year sikrer fin horisontal akse
+  mutate(year = make_date(year)) |> 
   ggplot(aes(x = year, y = gini_nuts2, group = NUTS2, color = NUTS2)) +
   geom_line() +
   labs(title = "Utvikling i Gini-koeffisientene for NUTS2-regionene i Spania",
@@ -569,9 +586,12 @@ eu_data_nested %>%
 ## Oppgave 26
 
 ```{r}
+#| warning: false
 eu_data_nested %>%
   unnest(NUTS1_data) %>%
   filter(country == "ES") %>%
+  # ag_comment: Et lite triks med year sikrer fin horisontal akse
+  mutate(year = make_date(year)) |> 
   ggplot(aes(x = year, y = gini_nuts1, group = NUTS1, color = NUTS1)) +
   geom_line() +
   labs(title = "Utvikling i Gini-koeffisientene for NUTS2-regionene i Spania",
@@ -590,18 +610,24 @@ De varierende Gini-koeffisientene reflekterer regionsspesifikke økonomiske forh
 ## Oppgave 28
 
 ```{r}
+# ag_comment: Jeg vil foreslå å kjøre alt i en pipe. Gnerere plot direkte fra eu_data_nested
 # Filtrer på Spania (ES) og NUTS2-nivå
-eu_data_spain_nuts2 <- eu_data_nested %>%
+eu_data_nested %>%
   unnest(NUTS2_data) %>%
-  filter(country == "ES")
-
+  filter(country == "ES") |> 
+  # ag_comment: Et lite triks med year sikrer fin horisontal akse
+  mutate(year = make_date(year)) |> 
 # Plotting av gdp_per_capita for de ulike NUTS2-regionene i Spania
-ggplot(eu_data_spain_nuts2, aes(x = year, y = gdp_per_capita, group = NUTS2, color = NUTS2)) +
+ggplot(
+  aes(x = year, y = gdp_per_capita, group = NUTS2, color = NUTS2)
+  ) +
   geom_line() +
   labs(title = "Utvikling i GDP per Capita på NUTS2-nivå i Spania",
        x = "År",
        y = "GDP per Capita")
 ```
+
+Knekken skyldes covid-19 som slo hardt ned i økonomien i Spania.
 
 ## Oppgave 29
 
@@ -619,38 +645,79 @@ ggplot(eu_data_Germany_nuts2, aes(x = year, y = gini_nuts2, group = NUTS2, color
        y = "gini_nuts2")
 ```
 
+ag_comment: Jeg vil foreslå å droppe fargekoding.
+Tror ikke mange har sterkt nok fargesyn til å identifisere de ulike linjene.
+
+```{r}
+#| warning: false
+# Filtrer på Tyskland (DE) og NUTS2-nivå
+eu_data_nested %>%
+  unnest(NUTS2_data) %>%
+  filter(country == "DE") |> 
+  # ag_comment: Et lite triks med year sikrer fin horisontal akse
+  mutate(year = make_date(year)) |> 
+  # Plotting av gdp_per_capita for de ulike NUTS2-regionene i Tyskland
+  ggplot(
+    mapping = aes(x = year, y = gini_nuts2, group = NUTS2)
+    ) +
+  geom_line() +
+  labs(title = "Utvikling i gini_nuts2 i Tyskland",
+       x = "År",
+       y = "gini_nuts2")
+```
+
 ## Oppgave 30
 
 ```{r}
+#| warning: false
+# ag_comment: Igjen vil jeg anbefale å lage figurene on-the-fly
+# Dette er ikke et objekt vi trenger å lagre for senere bruk
 # Filtrer på Tyskland (DE) og NUTS1-nivå
-eu_data_Germany_nuts1 <- eu_data_nested %>%
+eu_data_nested %>%
   unnest(NUTS1_data) %>%
-  filter(country == "DE")
-
-# Plotting av gdp_per_capita for de ulike NUTS2-regionene i Tyskland
-ggplot(eu_data_Germany_nuts1, aes(x = year, y = gini_nuts1, group = NUTS1, color = NUTS1)) +
+  filter(country == "DE") |> 
+  # ag_comment: Et lite triks med year sikrer fin horisontal akse
+  mutate(year = make_date(year)) |> 
+  # Plotting av gdp_per_capita for de ulike NUTS2-regionene i Tyskland
+ggplot(aes(x = year, y = gini_nuts1, group = NUTS1, color = NUTS1)) +
   geom_line() +
   labs(title = "Utvikling i gini_nuts1 i Tyskland",
        x = "År",
-       y = "gini_nuts1")
+       y = "gini_nuts1"
+       )
 ```
 
 Det er nesten samme tilfelle når vi ser på de større regioner (NUTS1) i Tyskland, men vi ser at spredningen ikke er like stor.
 
+ag_comment: Svak negativ tendens.
+Det vil si at forskjellene mellom NUTS2 regionene i Tyskland har blitt redusert over tid.
+Altså den samme utviklingen vi så for de mindre NUTS 3 regionene.
+Merker oss også at gini-koeffisientene fremdeles er relativt høye for Tyskland.
+Dette tyder på at mye av verdiskapningen i Tyskland er konsentrert til noen regioner.
+En ting vi burde sjekket er hvordan disse NUTS sonene er definert.
+Er det f.eks slik at noen soner består hovedsaklig av landbruksområder, mens andre er industri og by-områder?
+
 ## Oppgave 31
 
 ```{r}
+#| warning: false
 # Filtrer på Frankrike (FR) og NUTS2-nivå
-eu_data_Frankrike_nuts2 <- eu_data_nested %>%
+# ag_comment: Skrevet om til on-the-fly
+eu_data_nested %>%
   unnest(NUTS2_data) %>%
-  filter(country == "FR")
-
-# Plotting av gdp_per_capita for de ulike NUTS2-regionene i Frankrike
-ggplot(eu_data_Frankrike_nuts2, aes(x = year, y = gini_nuts2, group = NUTS2, color = NUTS2)) +
+  filter(country == "FR") |> 
+  # ag_comment: Et lite triks med year sikrer fin horisontal akse
+  mutate(year = make_date(year)) |> 
+  # Plotting av gdp_per_capita for de ulike NUTS2-regionene i Frankrike
+  ggplot(
+    mapping = aes(x = year, y = gini_nuts2, group = NUTS2, color = NUTS2)
+    ) +
   geom_line() +
-  labs(title = "Utvikling i gini_nuts2 i Frankrike",
-       x = "År",
-       y = "gini_nuts2")
+  labs(
+    title = "Utvikling i gini_nuts2 i Frankrike",
+    x = "År",
+    y = "gini_nuts2"
+    )
 ```
 
 ```{r}
@@ -663,7 +730,6 @@ eu_data_nested |>
      flextable()  |>
      width(1, width = 1.5) |>
      width(2, width = 1.5)
-
 ```
 
 ## Oppgave 32
@@ -672,10 +738,12 @@ eu_data_nested |>
 # Filtrer på Frankrike (FR) og NUTS2-nivå
 eu_data_Frankrike_nuts1 <- eu_data_nested %>%
   unnest(NUTS1_data) %>%
-  filter(country == "FR")
+  filter(country == "FR") |> 
+  mutate(year = make_date(year))
 
 # Plotting av gininuts1 for de ulike NUTS1-regionene i Frankrike
-ggplot(eu_data_Frankrike_nuts1, aes(x = year, y = gini_nuts1, group = NUTS1, color = NUTS1)) +
+ggplot(eu_data_Frankrike_nuts1, 
+       aes(x = year, y = gini_nuts1, group = NUTS1, color = NUTS1)) +
   geom_line() +
   labs(title = "Utvikling i gini_nuts2 i Frankrike",
        x = "År",
@@ -694,6 +762,7 @@ eu_data_nested |>
   filter(country == "FR") |> 
   unnest(NUTS3_data) |> 
   filter(NUTS1 == "FR1") |> 
+   mutate(year = make_date(year)) |> 
   ggplot(
     aes(
       x = year,
@@ -735,7 +804,6 @@ NUTS2_diff <- NUTS2_diff %>%
   mutate(
     modell = map(NUTS2_diff, ~ lm(diff_gini_nuts2 ~ diff_gdp_per_capita, data = .))
   )
-
 ```
 
 ## Oppgave 38
@@ -779,7 +847,8 @@ NUTS2_diff$mod_coeff |>
 
 ```{r}
 # Antall positive regresjonskoeffisienter
-antall_positive_koef <- sum(NUTS2_diff$modell %>% map_dbl(~ coef(.)["diff_gdp_per_capita"] > 0))
+antall_positive_koef <- sum(NUTS2_diff$modell %>% 
+                              map_dbl(~ coef(.)["diff_gdp_per_capita"] > 0))
 
 cat("Antall positive regresjonskoeffisienter for diff_gdp_per_capita:", antall_positive_koef, "\n")
 ```
